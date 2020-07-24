@@ -9,24 +9,24 @@ from nltk.corpus import stopwords
 
 
 app = Flask(__name__)
+model = pickle.load(open('model.sav','rb'))
 
 @app.route('/') #specify the URL it should trigger to execute the home function
 def home():
-	return render_template('home.html')
+	return render_template('index.html')
 
 @app.route('/predict',methods=['POST'])
 def predict():
 
-	model = pickle.load(open('model.sav','rb'))
 	if request.method == 'POST':
-		message = request.form['message']
+		message = request.form['Review']
 	def remove_URL(sample):
 	    """Remove URLs from a sample string"""
 	    return re.sub(r"http\S+", "", sample)
 
 	TAG_RE = re.compile(r'<[^>]+>')
 	def remove_tags(text):
-		
+
 	    return TAG_RE.sub('', text)
 
 	def remove_emoji(string):
@@ -63,8 +63,10 @@ def predict():
 	    return " ".join(text)
 	message = remove_stopwords(remove_punct(remove_emoji(remove_tags(remove_URL(message)))))
 	test_prediction = model.predict([message])
-
-	return render_template('result.html',prediction=test_prediction[0])
+	if test_prediction[0]:
+		return render_template('index.html', prediction_text='You have submitted a positive review')
+	else:
+		return render_template('index.html', prediction_text='You have submitted a negative review')
 
 if __name__ == '__main__':
 	app.run(debug=True)
